@@ -1,0 +1,75 @@
+---
+
+- name: VRF configuration
+  hosts: csr
+  connection: local
+  gather_facts: no
+  vars:
+    vrf_name: ansible
+    vrf_int: loopback111
+
+  tasks:
+  - name: Get Login credentials
+    # include_vars: /mnt/hgfs/vm_shared/ansible/access.yml
+    include_vars: /Users/crhill/vm_shared/ansible/access.yml
+
+  - name: Define Provider
+    set_fact:
+      provider:
+        # host: 192.168.50.145
+        host: "{{ access['device_ip'] }}"
+        # host: "{{ access['inventory_hostname'] }}"
+        username: "{{ access['username'] }}"
+        password: "{{ access['password'] }}"
+
+  - name: REMOVE VRF
+    ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      lines:
+        - no vrf definition {{ vrf_name }}
+      #  - no rd 1:1
+      #  - route-target export 1:1
+      #  - route-target import 1:1
+      #  - address-family ipv4
+      #  - exit-address-family
+      parents: ['vrf definition {{ vrf_name }}']
+      match: exact
+
+  - name: REMOVE VRF Interface
+    ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      lines:
+        - no interface {{ vrf_int }}
+      #  - no ip address 2.2.2.2 255.255.255.255
+      #  - no vrf forwarding ansible
+      parents: ['interface {{ vrf_int }}']
+      match: exact
+
+
+  - name: Run 'show VRF'
+    ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+        - show vrf
+
+    register: vrf
+  - debug: var=vrf.stdout_lines
+
+  - name: Run 'show run VRF...  '
+    ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+        - show run vrf
+
+    register: run_vrf
+  - debug: var=run_vrf.stdout_lines
+
+  handlers:
+   - name: write config
+     ios_command:
+        commands: write memory
+        provider: "{{ provider }}"

@@ -1,0 +1,7 @@
+vrf_name: ansible
+rd_id: '1:1'
+rt_imp: '1:1'
+rt_exp: '1:1'
+int_name: loopback111
+vrf_ip_address: 10.0.0.111
+vrf_ip_mask: 255.255.255.255

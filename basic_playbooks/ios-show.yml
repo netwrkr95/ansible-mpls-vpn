@@ -1,0 +1,33 @@
+---
+
+- name: Show Commands Playbook
+  hosts: csr
+  gather_facts: no
+  connection: local
+
+  tasks:
+  - name: Get Login credentials
+    include_vars: /mnt/hgfs/vm_shared/ansible/access.yml
+
+  - name: Define Provider
+    set_fact:
+      provider:
+        host: "{{ inventory_hostname }}"
+        username: "{{ access['username'] }}"
+        password: "{{ access['password'] }}"
+
+  - name: Run 'show output'
+    ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+      # "CLI" is the variable for any show command on the $prompt, using -e "cli='show command'"
+        - "{{ cli }}"
+
+      
+    register: output
+
+  - debug: var=output.stdout_lines
+
+
+...

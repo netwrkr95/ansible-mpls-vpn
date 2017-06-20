@@ -1,0 +1,58 @@
+---
+
+- name: IOS-XE - VRF configuration Playbook
+  hosts: csr
+  connection: local
+  gather_facts: no
+
+  #vars:
+  #  provider:
+  #    #  This references my "access.yml' file for login credentials
+  #    # host: "{{ inventory_hostname }}"
+  #    host: "{{ device_ip }}"
+  #    username: "{{ access['username'] }}"
+  #    password: "{{ access['password'] }}"
+
+  tasks:
+
+  - name: Get Login credentials
+    # include_vars: /mnt/hgfs/vm_shared/ansible/access.yml
+    include_vars: /Users/crhill/vm_shared/ansible/access.yml
+
+  - name: Define Provider
+    set_fact:
+      provider:
+      #  This references my "access.yml' file for login credentials
+        host: "{{ inventory_hostname }}"
+        # host: "{{ device_ip }}"
+        username: "{{ access['username'] }}"
+        password: "{{ access['password'] }}"
+
+#  I used variables for all of the needed commands, offering flexibility for the operator
+  - name: Create VRF
+    ios_config:
+      src: vrf-def.j2
+      provider: "{{ provider }}"
+    notify:
+      - write config
+
+  - name: Create VRF Forwarding Interface
+    ios_config:
+      src: vrf-interface.j2
+      provider: "{{ provider }}"
+    notify:
+      - write config
+
+  - name: Create VRF BGP Address-family
+    ios_config:
+      src: vrf-bgp.j2
+      provider: "{{ provider }}"
+    notify:
+      - write config
+
+
+  handlers:
+    - name: write config
+      ios_command:
+        commands: write memory
+        provider: "{{ provider }}"

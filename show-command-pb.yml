@@ -1,0 +1,31 @@
+---
+
+- name: IOS-XE - 'Show Version' Playbook
+  hosts: csr
+  connection: local
+  gather_facts: no
+
+
+  vars:
+    provider:
+  #  This references my "access.yml' file for login credentials
+      host: "{{ inventory_hostname }}"
+  #    host: "{{ device_ip }}"  # Use for changes in host file
+      username: "{{ access['username'] }}"
+      password: "{{ access['password'] }}"
+
+
+  tasks:
+
+  - name: Get Login credentials
+    # include_vars: /mnt/hgfs/vm_shared/ansible/access.yml  # Linux Image
+    include_vars: /Users/crhill/vm_shared/ansible/access.yml
+
+  - name: Run 'show version'
+    ios_command:
+      provider: "{{ provider }}"
+      commands:
+        - show version
+
+    register: version
+  - debug: var=version.stdout_lines

@@ -1,0 +1,33 @@
+# This is the default ansible 'hosts' file.
+#
+# It should live in /etc/ansible/hosts
+#
+#   - Comments begin with the '#' character
+#   - Blank lines are ignored
+#   - Groups of hosts are delimited by [header] elements
+#   - You can enter hostnames or ip addresses
+#   - A hostname/ip can be a member of multiple groups
+# #######################################################
+## csr ansible_port=55443 ansible_host=192.168.50.105
+# Ex 2: A collection of hosts belonging to the 'webservers' group
+# This is my list of hosts being used for initial testing
+#
+## alpha.example.org
+## beta.example.org
+## 192.168.1.120
+## 192.168.1.125
+## 192.168.1.130
+## 192.168.1.100
+#
+
+
+#------  Group Vars Example  ----------
+[csr:children]
+vrf-vars
+
+[vrf-vars]
+# 192.168.50.145
+# 172.16.1.108
+# 172.16.1.109
+10.83.11.113
+10.83.11.114

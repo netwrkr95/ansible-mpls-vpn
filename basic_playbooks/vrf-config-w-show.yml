@@ -1,0 +1,87 @@
+---
+
+- name: IOS-XE - VRF configuration Playbook
+  hosts: csr
+  connection: local
+  gather_facts: no
+  #  I decided to enter MPLS VPN variables directly into the Playbook.  There are other options of course
+  #  These 5 variables are all that is needed to get a basic VRF enabled, add the RD and RT,
+  #  apply the VRF to an interface of choice, and then add the address-family to BGP (could be other protocol)
+  vars:
+    rd_id: '1:1'
+    rt_imp: '1:1'
+    rt_exp: '1:1'
+    vrf_name: ansible
+    int_name:  loopback0
+
+  tasks:
+  - name: Get Login credentials
+    include_vars: /mnt/hgfs/vm_shared/ansible/access.yml
+
+  - name: Define Provider
+    set_fact:
+      provider:
+      #  This references my "access.yml' file for login credentials
+        host: "{{ inventory_hostname }}"
+        username: "{{ access['username'] }}"
+        password: "{{ access['password'] }}"
+
+#  I used variables for all of the needed commands, offering flexibility for the operator
+  - name: Create VRF
+    ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      lines:
+        - rd {{ rd_id }}
+        - route-target export {{ rt_exp }}
+        - route-target import {{ rt_imp }}
+        - address-family ipv4
+        - exit-address-family
+      parents: ['vrf definition {{ vrf_name }}']
+      match: exact
+
+  - name: Create and Attach VRF to Interface
+    ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      lines:
+        - vrf forwarding {{ vrf_name }}
+      parents: ['interface {{ int_name }}']
+      match: exact
+
+  - name: Create and 'CONFIGURE VRF Under BGP'
+    ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      lines:
+         - address-family ipv4 vrf {{ vrf_name }}
+         - exit-address-family
+      parents: ['router bgp 65000']
+      match: exact
+
+
+  - name: Run 'show VRF'
+    ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+        - show vrf
+
+    register: vrf
+  - debug: var=vrf.stdout_lines
+
+  - name: Run 'show IP Interface Brief'
+    ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+        - show ip interface brief
+
+    register: brief
+  - debug: var=brief.stdout_lines
+
+  handlers:
+   - name: write config
+     ios_command:
+        commands: write memory
+        provider: "{{ provider }}"
